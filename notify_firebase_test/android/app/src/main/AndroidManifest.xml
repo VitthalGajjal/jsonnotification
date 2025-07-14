@@ -1,0 +1,95 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
+
+
+
+    <application
+      android:name=".MainApplication"
+      android:label="@string/app_name"
+      android:icon="@mipmap/ic_launcher"
+      android:roundIcon="@mipmap/ic_launcher_round"
+      android:allowBackup="false"
+      android:theme="@style/AppTheme"
+      android:supportsRtl="true">
+
+      <activity
+        android:name=".MainActivity"
+        android:label="@string/app_name"
+        android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
+        android:launchMode="singleTask"
+        android:windowSoftInputMode="adjustResize"
+        android:exported="true">
+        <intent-filter>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent-filter>
+      </activity>
+
+      <!-- Firebase Messaging Service -->
+        <service
+            android:name="io.invertase.firebase.messaging.ReactNativeFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+      
+      <!-- Firebase Messaging Receiver -->
+        <receiver
+            android:name="io.invertase.firebase.messaging.ReactNativeFirebaseMessagingReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </receiver>
+
+      <!-- React Native Push Notification Receivers -->
+      <receiver android:name="com.dieam.reactnativepushnotification.modules.RNPushNotificationActions" />
+      <receiver android:name="com.dieam.reactnativepushnotification.modules.RNPushNotificationPublisher" />
+      <receiver
+          android:name="com.dieam.reactnativepushnotification.modules.RNPushNotificationBootEventReceiver"
+          android:exported="true">
+        <intent-filter>
+          <action android:name="android.intent.action.BOOT_COMPLETED" />
+          <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+          <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+          <category android:name="android.intent.category.DEFAULT" />
+        </intent-filter>
+      </receiver>
+      
+      <!-- Default notification channel -->
+        <meta-data
+          android:name="com.google.firebase.messaging.default_notification_channel_id"
+          android:value="@string/default_notification_channel_id"
+          tools:replace="android:value" />
+
+        <!-- Default notification icon -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
+
+        <!-- Default notification color -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/colorAccent" 
+            tools:replace="android:resource"/>
+
+        <!-- Automatically display messages -->
+        <meta-data
+            android:name="firebase_messaging_auto_init_enabled"
+            android:value="true" />
+
+        <!-- Analytics collection -->
+        <meta-data
+            android:name="firebase_analytics_collection_enabled"
+            android:value="true" />
+    </application>
+</manifest>

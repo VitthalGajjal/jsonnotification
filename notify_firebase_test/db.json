@@ -1,0 +1,94 @@
+{
+  "notifications": [
+    {
+      "id": "1",
+      "title": "Welcome",
+      "body": "Welcome to the notification app!",
+      "type": "local",
+      "notified": false,
+      "time": null,
+      "timestamp": "2025-01-11T10:00:00Z"
+    },
+    {
+      "id": "2",
+      "title": "Meeting Reminder",
+      "body": "Team sync at 8 PM",
+      "type": "scheduled",
+      "notified": false,
+      "time": "2025-01-11T20:00:00Z",
+      "timestamp": "2025-01-11T10:30:00Z"
+    },
+    {
+      "id": "0325",
+      "title": "Test",
+      "body": "Welcome ",
+      "type": "local",
+      "time": null,
+      "notified": false,
+      "timestamp": "2025-07-11T19:13:53.415Z"
+    },
+    {
+      "id": "1d4f",
+      "title": "Hello",
+      "body": "Rohit",
+      "type": "local",
+      "time": null,
+      "notified": true,
+      "timestamp": "2025-07-11T19:14:56.484Z"
+    },
+    {
+      "id": "087c",
+      "title": "Aditya",
+      "body": "Boss",
+      "type": "scheduled",
+      "time": "2025-07-11T19:25:00.000Z",
+      "notified": true,
+      "timestamp": "2025-07-11T19:19:07.074Z"
+    },
+    {
+      "id": "4599",
+      "title": "Hi",
+      "body": "Hello",
+      "type": "scheduled",
+      "time": "2025-07-11T19:58:00.000Z",
+      "notified": true,
+      "timestamp": "2025-07-11T19:55:35.847Z"
+    },
+    {
+      "id": "65e5",
+      "title": "Hi",
+      "body": "Hello",
+      "type": "local",
+      "time": null,
+      "notified": true,
+      "timestamp": "2025-07-12T04:39:25.232Z"
+    },
+    {
+      "id": "570e",
+      "title": "Hi",
+      "body": "Hello2",
+      "type": "scheduled",
+      "time": "2025-07-12T04:45:00.000Z",
+      "notified": true,
+      "timestamp": "2025-07-12T04:39:47.252Z"
+    },
+    {
+      "id": "5053",
+      "title": "Hello",
+      "body": "Welcome",
+      "type": "local",
+      "time": null,
+      "notified": true,
+      "timestamp": "2025-07-14T05:17:16.281Z"
+    },
+    {
+      "id": "82ab",
+      "title": "Hi",
+      "body": "Hello",
+      "type": "scheduled",
+      "time": "2025-07-14T06:25:00.000Z",
+      "notified": true,
+      "timestamp": "2025-07-14T06:20:14.226Z"
+    }
+  ]
+}
