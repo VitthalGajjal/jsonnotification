@@ -1,7 +1,6 @@
 {
   "name": "notification-json-server",
   "version": "1.0.0",
-  "description": "JSON Server for notifications",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
