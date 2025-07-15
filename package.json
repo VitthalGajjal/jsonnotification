@@ -12,8 +12,5 @@
     "express": "^5.1.0",
     "json-server": "^0.17.4",
     "serverless-http": "^3.2.0"
-  },
-  "engines": {
-    "node": ">=18"
   }
 }

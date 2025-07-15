@@ -3,10 +3,14 @@ const fs = require('fs');
 const path = require('path');
 const low = require('lowdb');
 const FileSync = require('lowdb/adapters/FileSync');
-const cors = require('cors'); // Import cors middleware
+const cors = require('cors');
 
-// Create Express app
 const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
 
 // Path to database file
 const dbPath = path.join(__dirname, 'db.json');
@@ -47,13 +51,7 @@ const db = low(adapter);
 // Set default structure if db.json was just created or is empty
 db.defaults({ notifications: [] }).write();
 
-// Enable CORS for all origins
-app.use(cors());
-
-// Middleware to parse JSON request bodies
-app.use(express.json());
-
-// Add custom middleware for enhanced logging
+// Custom middleware for enhanced logging
 app.use((req, res, next) => {
   console.log(`📡 ${req.method} ${req.url}`);
   if (req.body && Object.keys(req.body).length > 0) {
@@ -62,122 +60,251 @@ app.use((req, res, next) => {
   next();
 });
 
-// Custom route for sending notifications (POST /send-notification)
+// --- Endpoint: Send Notification ---
 app.post('/send-notification', (req, res) => {
-  console.log('📤 Send notification request received');
+  try {
+    console.log('📤 Send notification request received');
 
-  const newNotification = {
-    id: Date.now().toString(),
-    title: req.body.title || 'New Notification',
-    body: req.body.body || 'You have a new message.',
-    type: req.body.type || 'local',
-    notified: true, // Assuming sending means it's notified
-    time: req.body.time || null,
-    timestamp: new Date().toISOString(),
-  };
+    const { title, body, type, time } = req.body;
 
-  db.get('notifications')
-    .push(newNotification)
-    .write();
+    const newNotification = {
+      id: Date.now().toString(),
+      title: title || 'New Notification',
+      body: body || 'You have a new message.',
+      type: type || 'local',
+      notified: true, // Assuming sending means it's notified
+      time: time || null,
+      timestamp: new Date().toISOString(),
+    };
 
-  console.log('✅ Notification saved to database:', newNotification);
+    db.get('notifications')
+      .push(newNotification)
+      .write();
 
-  res.status(201).json({
+    console.log('✅ Notification saved to database:', newNotification);
+
+    res.status(201).json({
+      success: true,
+      message: 'Notification received and saved',
+      notification: newNotification,
+    });
+  } catch (error) {
+    console.error('Error sending notification:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to send notification' 
+    });
+  }
+});
+
+// --- Endpoint: Get Latest Notification ---
+app.get('/notifications/latest', (req, res) => {
+  try {
+    console.log('🔍 Latest notification requested');
+
+    const notifications = db.get('notifications').value();
+
+    if (notifications.length === 0) {
+      console.log('⚠️ No notifications found');
+      return res.status(404).json({
+        success: false,
+        message: 'No notifications found'
+      });
+    }
+
+    const latestNotification = notifications[notifications.length - 1];
+    console.log('📋 Latest notification:', latestNotification);
+    res.status(200).json(latestNotification);
+  } catch (error) {
+    console.error('Error getting latest notification:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to get latest notification' 
+    });
+  }
+});
+
+// --- Endpoint: Get All Notifications ---
+app.get('/notifications', (req, res) => {
+  try {
+    console.log('🔍 All notifications requested');
+
+    const notifications = db.get('notifications').value();
+    console.log(`📋 Found ${notifications.length} notifications`);
+    
+    res.status(200).json({
+      success: true,
+      count: notifications.length,
+      notifications: notifications
+    });
+  } catch (error) {
+    console.error('Error getting notifications:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to get notifications' 
+    });
+  }
+});
+
+// --- Endpoint: Update Notification Status ---
+app.patch('/notifications/:id', (req, res) => {
+  try {
+    const notificationId = req.params.id;
+    console.log(`🔄 Update notification ${notificationId} requested`);
+
+    const notification = db.get('notifications').find({ id: notificationId });
+
+    if (notification.value()) {
+      notification.assign(req.body).write();
+      console.log(`✅ Notification ${notificationId} updated:`, req.body);
+      res.status(200).json({
+        success: true,
+        message: `Notification ${notificationId} updated successfully`,
+        notification: notification.value()
+      });
+    } else {
+      console.warn(`❌ Notification ${notificationId} not found`);
+      res.status(404).json({
+        success: false,
+        message: 'Notification not found'
+      });
+    }
+  } catch (error) {
+    console.error('Error updating notification:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to update notification' 
+    });
+  }
+});
+
+// --- Endpoint: Delete Notification ---
+app.delete('/notifications/:id', (req, res) => {
+  try {
+    const notificationId = req.params.id;
+    console.log(`🗑️ Delete notification ${notificationId} requested`);
+
+    const notifications = db.get('notifications');
+    const notification = notifications.find({ id: notificationId });
+
+    if (notification.value()) {
+      notifications.remove({ id: notificationId }).write();
+      console.log(`✅ Notification ${notificationId} deleted`);
+      res.status(200).json({
+        success: true,
+        message: `Notification ${notificationId} deleted successfully`
+      });
+    } else {
+      console.warn(`❌ Notification ${notificationId} not found`);
+      res.status(404).json({
+        success: false,
+        message: 'Notification not found'
+      });
+    }
+  } catch (error) {
+    console.error('Error deleting notification:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to delete notification' 
+    });
+  }
+});
+
+// --- Endpoint: Get Notification Statistics ---
+app.get('/notifications/stats', (req, res) => {
+  try {
+    console.log('📊 Notification statistics requested');
+
+    const notifications = db.get('notifications').value();
+
+    const stats = {
+      total: notifications.length,
+      notified: notifications.filter(n => n.notified).length,
+      unnotified: notifications.filter(n => !n.notified).length,
+      byType: {
+        local: notifications.filter(n => n.type === 'local').length,
+        scheduled: notifications.filter(n => n.type === 'scheduled').length
+      }
+    };
+
+    console.log('📈 Statistics:', stats);
+    res.status(200).json({
+      success: true,
+      stats: stats
+    });
+  } catch (error) {
+    console.error('Error getting notification statistics:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to get notification statistics' 
+    });
+  }
+});
+
+// --- Endpoint: Mark Notification as Read ---
+app.patch('/notifications/:id/read', (req, res) => {
+  try {
+    const notificationId = req.params.id;
+    console.log(`📖 Mark notification ${notificationId} as read`);
+
+    const notification = db.get('notifications').find({ id: notificationId });
+
+    if (notification.value()) {
+      notification.assign({ notified: true }).write();
+      console.log(`✅ Notification ${notificationId} marked as read`);
+      res.status(200).json({
+        success: true,
+        message: `Notification ${notificationId} marked as read`,
+        notification: notification.value()
+      });
+    } else {
+      console.warn(`❌ Notification ${notificationId} not found`);
+      res.status(404).json({
+        success: false,
+        message: 'Notification not found'
+      });
+    }
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to mark notification as read' 
+    });
+  }
+});
+
+// --- Endpoint: Clear All Notifications ---
+app.delete('/notifications', (req, res) => {
+  try {
+    console.log('🗑️ Clear all notifications requested');
+
+    const count = db.get('notifications').value().length;
+    db.set('notifications', []).write();
+    
+    console.log(`✅ Cleared ${count} notifications`);
+    res.status(200).json({
+      success: true,
+      message: `Cleared ${count} notifications`
+    });
+  } catch (error) {
+    console.error('Error clearing notifications:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to clear notifications' 
+    });
+  }
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({
     success: true,
-    message: 'Notification received and saved',
-    notification: newNotification,
+    message: 'Notification service is running',
+    timestamp: new Date().toISOString()
   });
 });
 
-// Custom route for getting latest notification (GET /notifications/latest)
-app.get('/notifications/latest', (req, res) => {
-  console.log('🔍 Latest notification requested');
-
-  const notifications = db.get('notifications').value();
-
-  if (notifications.length === 0) {
-    console.log('⚠️ No notifications found');
-    res.status(404).json({
-      success: false,
-      message: 'No notifications found'
-    });
-    return;
-  }
-
-  const latestNotification = notifications[notifications.length - 1];
-  console.log('📋 Latest notification:', latestNotification);
-  res.status(200).json(latestNotification);
-});
-
-// Custom route to update notification status (PATCH /notifications/:id)
-app.patch('/notifications/:id', (req, res) => {
-  const notificationId = req.params.id;
-  console.log(`🔄 Update notification ${notificationId} requested`);
-
-  const notification = db.get('notifications').find({ id: notificationId });
-
-  if (notification.value()) {
-    notification.assign(req.body).write();
-    console.log(`✅ Notification ${notificationId} updated:`, req.body);
-    res.status(200).json({
-      success: true,
-      message: `Notification ${notificationId} updated successfully`,
-      notification: notification.value()
-    });
-  } else {
-    console.warn(`❌ Notification ${notificationId} not found`);
-    res.status(404).json({
-      success: false,
-      message: 'Notification not found'
-    });
-  }
-});
-
-// Custom route to delete a notification (DELETE /notifications/:id)
-app.delete('/notifications/:id', (req, res) => {
-  const notificationId = req.params.id;
-  console.log(`🗑️ Delete notification ${notificationId} requested`);
-
-  const notifications = db.get('notifications');
-  const notification = notifications.find({ id: notificationId });
-
-  if (notification.value()) {
-    notifications.remove({ id: notificationId }).write();
-    console.log(`✅ Notification ${notificationId} deleted`);
-    res.status(200).json({
-      success: true,
-      message: `Notification ${notificationId} deleted successfully`
-    });
-  } else {
-    console.warn(`❌ Notification ${notificationId} not found`);
-    res.status(404).json({
-      success: false,
-      message: 'Notification not found'
-    });
-  }
-});
-
-// Custom route to get notification statistics
-app.get('/notifications/stats', (req, res) => {
-  console.log('📊 Notification statistics requested');
-
-  const notifications = db.get('notifications').value();
-
-  const stats = {
-    total: notifications.length,
-    notified: notifications.filter(n => n.notified).length,
-    unnotified: notifications.filter(n => !n.notified).length,
-    byType: {
-      local: notifications.filter(n => n.type === 'local').length,
-      scheduled: notifications.filter(n => n.type === 'scheduled').length
-    }
-  };
-
-  console.log('📈 Statistics:', stats);
-  res.status(200).json(stats);
-});
-
-// Add a catch-all route for any other requests to return a 404
+// 404 handler - must be after all other routes
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -185,6 +312,16 @@ app.use((req, res) => {
   });
 });
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({
+    success: false,
+    message: 'Internal server error'
+  });
+});
 
-// Export the Express app instance for Vercel
-module.exports = app;
+// Start server
+app.listen(PORT, () => {
+  console.log(`🚀 Notification server running on http://localhost:${PORT}`);
+});
