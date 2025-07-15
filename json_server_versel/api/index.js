@@ -1,7 +1,53 @@
 const jsonServer = require('json-server');
+
+// Create server
 const server = jsonServer.create();
-const router = jsonServer.router('db.json');
 const middlewares = jsonServer.defaults();
+
+// Database data (since we can't use files in serverless)
+const db = {
+  notifications: [
+    {
+      "id": "1",
+      "title": "Welcome",
+      "body": "Welcome to the notification app!",
+      "type": "local",
+      "notified": false,
+      "time": null,
+      "timestamp": "2025-01-11T10:00:00Z"
+    },
+    {
+      "id": "2",
+      "title": "Meeting Reminder",
+      "body": "Team sync at 8 PM",
+      "type": "scheduled",
+      "notified": false,
+      "time": "2025-01-11T20:00:00Z",
+      "timestamp": "2025-01-11T10:30:00Z"
+    },
+    {
+      "id": "0325",
+      "title": "Test",
+      "body": "Welcome ",
+      "type": "local",
+      "time": null,
+      "notified": false,
+      "timestamp": "2025-07-11T19:13:53.415Z"
+    },
+    {
+      "id": "1d4f",
+      "title": "Hello",
+      "body": "Rohit",
+      "type": "local",
+      "time": null,
+      "notified": true,
+      "timestamp": "2025-07-11T19:14:56.484Z"
+    }
+  ]
+};
+
+// Create router with in-memory database
+const router = jsonServer.router(db);
 
 // Enable CORS and other middleware
 server.use(middlewares);
@@ -20,11 +66,10 @@ server.use((req, res, next) => {
 server.post('/send-notification', (req, res) => {
   console.log('📤 Send notification request received');
   
-  const db = router.db;
-  const notifications = db.get('notifications');
+  const notifications = router.db.get('notifications');
 
   const newNotification = {
-    id: Date.now().toString(), // Convert to string for consistency
+    id: Date.now().toString(),
     title: req.body.title || 'New Notification',
     body: req.body.body || 'You have a new message.',
     type: req.body.type || 'local',
@@ -47,8 +92,7 @@ server.post('/send-notification', (req, res) => {
 server.get('/notifications/latest', (req, res) => {
   console.log('🔍 Latest notification requested');
   
-  const db = router.db;
-  const notifications = db.get('notifications').value();
+  const notifications = router.db.get('notifications').value();
   
   if (notifications.length === 0) {
     console.log('⚠️ No notifications found');
@@ -66,11 +110,10 @@ server.get('/notifications/latest', (req, res) => {
 
 // Custom route to update notification status (PATCH /notifications/:id)
 server.patch('/notifications/:id', (req, res) => {
-  const notificationId = req.params.id; // Keep as string
+  const notificationId = req.params.id;
   console.log(`🔄 Update notification ${notificationId} requested`);
   
-  const db = router.db;
-  const notifications = db.get('notifications');
+  const notifications = router.db.get('notifications');
   const notification = notifications.find({ id: notificationId });
 
   if (notification.value()) {
@@ -93,31 +136,5 @@ server.patch('/notifications/:id', (req, res) => {
 // Use default json-server routes for other requests
 server.use(router);
 
-// Use PORT from environment variable (required for Vercel)
-const PORT = process.env.PORT || 3000;
-
-// Always export the server for Vercel
+// Export for Vercel
 module.exports = server;
-
-// Only listen when running locally (not in production)
-if (process.env.NODE_ENV !== 'production') {
-  server.listen(PORT, '0.0.0.0', () => {
-    console.log('🚀 JSON Server is running!');
-    console.log(`📍 Local: http://localhost:${PORT}`);
-    console.log(`📍 Network: http://0.0.0.0:${PORT}`);
-    console.log(`📱 Android Emulator: http://10.0.2.2:${PORT}`);
-    console.log(`📱 Physical Device: http://[YOUR_IP]:${PORT}`);
-    console.log('');
-    console.log('🔧 Available endpoints:');
-    console.log('  GET    /notifications');
-    console.log('  GET    /notifications/latest');
-    console.log('  POST   /send-notification');
-    console.log('  PATCH  /notifications/:id');
-    console.log('  DELETE /notifications/:id');
-    console.log('');
-    console.log('💡 To get your IP address:');
-    console.log('  - Windows: ipconfig');
-    console.log('  - Mac/Linux: ifconfig');
-    console.log('  - Update JsonService.js with your IP address');
-  });
-}
