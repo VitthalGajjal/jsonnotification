@@ -10,7 +10,8 @@
     "vercel-build": "echo 'No build step required'"
   },
   "dependencies": {
-    "json-server": "^0.17.4"
+    "json-server": "^0.17.4",
+    "serverless-http": "^3.2.0"
   },
   "engines": {
     "node": ">=18"
