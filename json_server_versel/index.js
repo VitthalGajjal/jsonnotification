@@ -1,16 +1,17 @@
-const jsonServer = require('json-server');
+const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const serverless = require('serverless-http'); // Import serverless-http
+const low = require('lowdb');
+const FileSync = require('lowdb/adapters/FileSync');
+const cors = require('cors'); // Import cors middleware
 
-// Create server
-const server = jsonServer.create();
-const middlewares = jsonServer.defaults();
+// Create Express app
+const app = express();
 
 // Path to database file
 const dbPath = path.join(__dirname, 'db.json');
 
-// Ensure db.json exists
+// Ensure db.json exists with initial data if not present
 if (!fs.existsSync(dbPath)) {
   const initialData = {
     notifications: [
@@ -39,15 +40,21 @@ if (!fs.existsSync(dbPath)) {
   console.log('📄 Created db.json file');
 }
 
-// Create router with file-based database
-const router = jsonServer.router(dbPath);
+// Initialize lowdb
+const adapter = new FileSync(dbPath);
+const db = low(adapter);
 
-// Enable CORS and other middleware
-server.use(middlewares);
-server.use(jsonServer.bodyParser);
+// Set default structure if db.json was just created or is empty
+db.defaults({ notifications: [] }).write();
+
+// Enable CORS for all origins
+app.use(cors());
+
+// Middleware to parse JSON request bodies
+app.use(express.json());
 
 // Add custom middleware for enhanced logging
-server.use((req, res, next) => {
+app.use((req, res, next) => {
   console.log(`📡 ${req.method} ${req.url}`);
   if (req.body && Object.keys(req.body).length > 0) {
     console.log('📦 Request body:', JSON.stringify(req.body, null, 2));
@@ -56,11 +63,8 @@ server.use((req, res, next) => {
 });
 
 // Custom route for sending notifications (POST /send-notification)
-server.post('/send-notification', (req, res) => {
+app.post('/send-notification', (req, res) => {
   console.log('📤 Send notification request received');
-
-  const db = router.db;
-  const notifications = db.get('notifications');
 
   const newNotification = {
     id: Date.now().toString(),
@@ -72,7 +76,10 @@ server.post('/send-notification', (req, res) => {
     timestamp: new Date().toISOString(),
   };
 
-  notifications.push(newNotification).write();
+  db.get('notifications')
+    .push(newNotification)
+    .write();
+
   console.log('✅ Notification saved to database:', newNotification);
 
   res.status(201).json({
@@ -83,10 +90,9 @@ server.post('/send-notification', (req, res) => {
 });
 
 // Custom route for getting latest notification (GET /notifications/latest)
-server.get('/notifications/latest', (req, res) => {
+app.get('/notifications/latest', (req, res) => {
   console.log('🔍 Latest notification requested');
 
-  const db = router.db;
   const notifications = db.get('notifications').value();
 
   if (notifications.length === 0) {
@@ -104,13 +110,11 @@ server.get('/notifications/latest', (req, res) => {
 });
 
 // Custom route to update notification status (PATCH /notifications/:id)
-server.patch('/notifications/:id', (req, res) => {
+app.patch('/notifications/:id', (req, res) => {
   const notificationId = req.params.id;
   console.log(`🔄 Update notification ${notificationId} requested`);
 
-  const db = router.db;
-  const notifications = db.get('notifications');
-  const notification = notifications.find({ id: notificationId });
+  const notification = db.get('notifications').find({ id: notificationId });
 
   if (notification.value()) {
     notification.assign(req.body).write();
@@ -130,11 +134,10 @@ server.patch('/notifications/:id', (req, res) => {
 });
 
 // Custom route to delete a notification (DELETE /notifications/:id)
-server.delete('/notifications/:id', (req, res) => {
+app.delete('/notifications/:id', (req, res) => {
   const notificationId = req.params.id;
   console.log(`🗑️ Delete notification ${notificationId} requested`);
 
-  const db = router.db;
   const notifications = db.get('notifications');
   const notification = notifications.find({ id: notificationId });
 
@@ -155,10 +158,9 @@ server.delete('/notifications/:id', (req, res) => {
 });
 
 // Custom route to get notification statistics
-server.get('/notifications/stats', (req, res) => {
+app.get('/notifications/stats', (req, res) => {
   console.log('📊 Notification statistics requested');
 
-  const db = router.db;
   const notifications = db.get('notifications').value();
 
   const stats = {
@@ -175,22 +177,14 @@ server.get('/notifications/stats', (req, res) => {
   res.status(200).json(stats);
 });
 
-
-// Use default json-server routes for other requests
-server.use(router);
-
-// Comment out or remove the server.listen() call for Vercel deployment
-// const PORT = process.env.PORT || 3000;
-// const HOST = process.env.HOST || '0.0.0.0';
-// server.listen(PORT, HOST, () => {
-//   console.log(`🚀 JSON Server is running on http://${HOST}:${PORT}`);
-//   // ... rest of the console logs
-// });
-
-// Comment out or remove graceful shutdown for Vercel deployment
-// process.on('SIGINT', () => { ... });
-// process.on('SIGTERM', () => { ... });
+// Add a catch-all route for any other requests to return a 404
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Route not found'
+  });
+});
 
 
-// Export the wrapped server for Vercel
-module.exports = serverless(server);
+// Export the Express app instance for Vercel
+module.exports = app;
