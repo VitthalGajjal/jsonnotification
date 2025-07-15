@@ -2,10 +2,10 @@
   "name": "notification-json-server",
   "version": "1.0.0",
   "description": "JSON Server for notifications",
-  "main": "server.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
+    "start": "node index.js",
+    "dev": "node index.js",
     "simple": "json-server db.json --port 3000 --host 0.0.0.0",
     "vercel-build": "echo 'No build step required'"
   },
