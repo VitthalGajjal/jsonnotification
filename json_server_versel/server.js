@@ -16,16 +16,6 @@ server.use((req, res, next) => {
   next();
 });
 
-// Health check endpoint
-server.get('/health', (req, res) => {
-  console.log('🏥 Health check requested');
-  res.json({ 
-    status: 'healthy', 
-    timestamp: new Date().toISOString(),
-    message: 'JSON Server is running correctly' 
-  });
-});
-
 // Custom route for sending notifications (POST /send-notification)
 server.post('/send-notification', (req, res) => {
   console.log('📤 Send notification request received');
@@ -34,7 +24,7 @@ server.post('/send-notification', (req, res) => {
   const notifications = db.get('notifications');
 
   const newNotification = {
-    id: Date.now(),
+    id: Date.now().toString(), // Convert to string for consistency
     title: req.body.title || 'New Notification',
     body: req.body.body || 'You have a new message.',
     type: req.body.type || 'local',
@@ -76,7 +66,7 @@ server.get('/notifications/latest', (req, res) => {
 
 // Custom route to update notification status (PATCH /notifications/:id)
 server.patch('/notifications/:id', (req, res) => {
-  const notificationId = parseInt(req.params.id, 10);
+  const notificationId = req.params.id; // Keep as string
   console.log(`🔄 Update notification ${notificationId} requested`);
   
   const db = router.db;
@@ -103,24 +93,31 @@ server.patch('/notifications/:id', (req, res) => {
 // Use default json-server routes for other requests
 server.use(router);
 
-const PORT = 3000;
-server.listen(PORT, '0.0.0.0', () => {
-  console.log('🚀 JSON Server is running!');
-  console.log(`📍 Local: http://localhost:${PORT}`);
-  console.log(`📍 Network: http://0.0.0.0:${PORT}`);
-  console.log(`📱 Android Emulator: http://10.0.2.2:${PORT}`);
-  console.log(`📱 Physical Device: http://[YOUR_IP]:${PORT}`);
-  console.log('');
-  console.log('🔧 Available endpoints:');
-  console.log('  GET    /health');
-  console.log('  GET    /notifications');
-  console.log('  GET    /notifications/latest');
-  console.log('  POST   /send-notification');
-  console.log('  PATCH  /notifications/:id');
-  console.log('  DELETE /notifications/:id');
-  console.log('');
-  console.log('💡 To get your IP address:');
-  console.log('  - Windows: ipconfig');
-  console.log('  - Mac/Linux: ifconfig');
-  console.log('  - Update JsonService.js with your IP address');
-});
+// Use PORT from environment variable (required for Vercel)
+const PORT = process.env.PORT || 3000;
+
+// Always export the server for Vercel
+module.exports = server;
+
+// Only listen when running locally (not in production)
+if (process.env.NODE_ENV !== 'production') {
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log('🚀 JSON Server is running!');
+    console.log(`📍 Local: http://localhost:${PORT}`);
+    console.log(`📍 Network: http://0.0.0.0:${PORT}`);
+    console.log(`📱 Android Emulator: http://10.0.2.2:${PORT}`);
+    console.log(`📱 Physical Device: http://[YOUR_IP]:${PORT}`);
+    console.log('');
+    console.log('🔧 Available endpoints:');
+    console.log('  GET    /notifications');
+    console.log('  GET    /notifications/latest');
+    console.log('  POST   /send-notification');
+    console.log('  PATCH  /notifications/:id');
+    console.log('  DELETE /notifications/:id');
+    console.log('');
+    console.log('💡 To get your IP address:');
+    console.log('  - Windows: ipconfig');
+    console.log('  - Mac/Linux: ifconfig');
+    console.log('  - Update JsonService.js with your IP address');
+  });
+}

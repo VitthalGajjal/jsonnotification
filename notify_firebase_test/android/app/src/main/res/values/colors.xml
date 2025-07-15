@@ -1,4 +1,0 @@
-<resources>
-    <!-- Add this line -->
-    <color name="colorAccent">#000000</color> <!-- Replace #000000 with your desired accent color -->
-</resources>

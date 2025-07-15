@@ -1,0 +1,40 @@
+{
+  "notifications": [
+    {
+      "id": "1",
+      "title": "Welcome",
+      "body": "Welcome to the notification app!",
+      "type": "local",
+      "notified": false,
+      "time": null,
+      "timestamp": "2025-01-11T10:00:00Z"
+    },
+    {
+      "id": "2",
+      "title": "Meeting Reminder",
+      "body": "Team sync at 8 PM",
+      "type": "scheduled",
+      "notified": false,
+      "time": "2025-01-11T20:00:00Z",
+      "timestamp": "2025-01-11T10:30:00Z"
+    },
+    {
+      "id": "0325",
+      "title": "Test",
+      "body": "Welcome ",
+      "type": "local",
+      "time": null,
+      "notified": false,
+      "timestamp": "2025-07-11T19:13:53.415Z"
+    },
+    {
+      "id": "1d4f",
+      "title": "Hello",
+      "body": "Rohit",
+      "type": "local",
+      "time": null,
+      "notified": true,
+      "timestamp": "2025-07-11T19:14:56.484Z"
+    }
+  ]
+}

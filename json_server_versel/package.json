@@ -1,0 +1,19 @@
+{
+  "name": "notification-json-server",
+  "version": "1.0.0",
+  "description": "JSON Server for notifications",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "simple": "json-server db.json --port 3000 --host 0.0.0.0"
+  },
+  "dependencies": {
+    "json-server": "^1.0.0-beta.3",
+    "cors": "^2.8.5",
+    "lowdb": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
